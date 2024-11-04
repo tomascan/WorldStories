@@ -1,7 +1,9 @@
-import tkinter as tk
-from gui import create_main_window
+from db import create_table  # Importar la función para crear la tabla
+from gui_tests import create_main_window  # Importar la función para crear la GUI
 
-# Punto de entrada de la aplicación
+# Llamada a la función para crear la tabla en la base de datos
+create_table()
+
+# Crear la interfaz gráfica
 if __name__ == "__main__":
-    root = create_main_window()  # Crear la ventana principal
-    root.mainloop()  # Iniciar el bucle de eventos de Tkinter
+    create_main_window()

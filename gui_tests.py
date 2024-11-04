@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, filedialog, Toplevel
 import pandas as pd  # Importar pandas para manejar archivos Excel
-from db import create_table, add_book, delete_table, show_books, show_table_data, update_book, delete_book, create_custom_table, get_tables  # Importar la nueva función get_tables
+from db import create_table, add_book, delete_table, show_books, get_table_columns, show_table_data, update_book, delete_book, create_custom_table, get_tables  # Importar la nueva función get_tables
 
 # Llamada a la función para crear la tabla en la base de datos (puedes ajustar esta parte según sea necesario)
 create_table()
@@ -15,6 +15,7 @@ def create_main_window():
 
     # Definir tabla por defecto
     current_table = "Books"  # Tabla predeterminada
+    entries = {}
 
 
     # Función para actualizar la tabla activa
@@ -29,73 +30,47 @@ def create_main_window():
             table_button.pack(pady=5)  # Agregar botón por cada tabla en la ventana
 
     def update_current_table(selected_table, window):
-        nonlocal current_table
+        nonlocal current_table, entries
         current_table = selected_table
         messagebox.showinfo("Tabla Seleccionada", f"Tabla activa: {current_table}")
         window.destroy()
+
+    
+        # Eliminar campos de entrada anteriores
+        for widget in entry_frame.winfo_children():
+            widget.destroy()
+
+        # Obtener columnas de la tabla seleccionada y regenerar campos de entrada
+        columns = get_table_columns(current_table)  # Nueva función en db.py para obtener columnas de la tabla
+        entries = {}  # Reiniciar el diccionario de entradas
+
+        for i, column in enumerate(columns):
+            tk.Label(entry_frame, text=column).grid(row=i, column=0)
+            entry = tk.Entry(entry_frame)
+            entry.grid(row=i, column=1)
+            entries[column] = entry
+
+    # Crear marco para los campos de entrada dinámicos
+    entry_frame = tk.Frame(root)
+    entry_frame.grid(row=1, column=0, columnspan=3)
 
     # Botón para seleccionar tabla
     select_table_button = tk.Button(root, text="Seleccionar Tabla", command=select_table)
     select_table_button.grid(row=0, column=2)
 
-    # --- Campos de entrada para la información del libro ---
-    tk.Label(root, text="Etapa").grid(row=0, column=0)
-    section_entry = tk.Entry(root)
-    section_entry.grid(row=0, column=1)
-
-    tk.Label(root, text="Subetapa").grid(row=1, column=0)
-    sub_section_entry = tk.Entry(root)
-    sub_section_entry.grid(row=1, column=1)
-
-    tk.Label(root, text="Título").grid(row=2, column=0)
-    title_entry = tk.Entry(root)
-    title_entry.grid(row=2, column=1)
-
-    tk.Label(root, text="Autor").grid(row=3, column=0)
-    author_entry = tk.Entry(root)
-    author_entry.grid(row=3, column=1)
-
-    tk.Label(root, text="Descripción").grid(row=4, column=0)
-    description_entry = tk.Entry(root)
-    description_entry.grid(row=4, column=1)
-
-    tk.Label(root, text="Año Inicio").grid(row=5, column=0)
-    start_year_entry = tk.Entry(root)
-    start_year_entry.grid(row=5, column=1)
-
-    tk.Label(root, text="Año Fin").grid(row=6, column=0)
-    end_year_entry = tk.Entry(root)
-    end_year_entry.grid(row=6, column=1)
-
-    tk.Label(root, text="Continente").grid(row=7, column=0)
-    continent_entry = tk.Entry(root)
-    continent_entry.grid(row=7, column=1)
-
-    tk.Label(root, text="País").grid(row=8, column=0)
-    country_entry = tk.Entry(root)
-    country_entry.grid(row=8, column=1)
-
 
 # ------------------------------------- Añadir un Libro -------------------------------------------
 
     def submit():
-        section = section_entry.get()
-        sub_section = sub_section_entry.get()
-        title = title_entry.get()
-        author = author_entry.get()
-        description = description_entry.get()
-        start_year = int(start_year_entry.get())
-        end_year = int(end_year_entry.get())
-        continent = continent_entry.get()
-        country = country_entry.get()
+        # Recolectar los valores actuales de `entries` dinámico
+        values = {label: entry.get() for label, entry in entries.items() if label.lower() != 'id'}
+        add_book(current_table, **values)
+        messagebox.showinfo("Éxito", "Libro añadido exitosamente!")
 
-        # Llamada a la función para añadir el libro a la base de datos
-        add_book(current_table, section, sub_section, title, author, description, start_year, end_year, continent, country)
-        messagebox.showinfo("Éxito", "Libro añadido exitosamente!")  # Mensaje de éxito
-
-
+    # Crear botón para añadir libro, colocado después de los campos dinámicos
     submit_button = tk.Button(root, text="Añadir Libro", command=submit)
-    submit_button.grid(row=9, column=1)
+    submit_button.grid(row=20, column=1)  # Ajusta la fila si es necesario
+
 
 
 
@@ -103,14 +78,19 @@ def create_main_window():
 
     def show():
         books = show_books(current_table)
-        book_list = "\n".join([f"{book[0]}: {book[1]} - {book[2]} - {book[3]} - {book[4]}" for book in books])
-        messagebox.showinfo("Libros", book_list or "No se encontraron libros.")
+        # Obtener columnas dinámicamente de la tabla seleccionada
+        columns = get_table_columns(current_table)  # Función que retorna las columnas de `current_table`
+        # Construir la cabecera de las columnas
+        header = " | ".join(columns)
+        # Formatear los datos de cada libro para que se muestren correctamente
+        book_list = "\n".join([f"{book[0]}: " + " | ".join(map(str, book[1:])) for book in books])
+        
+        # Mostrar el mensaje con la cabecera y el listado de libros, o un mensaje alternativo si no hay datos
+        messagebox.showinfo("Libros", f"{header}\n\n{book_list}" if book_list else "No se encontraron libros.")
 
-
-
+    # Crear botón para mostrar libros
     show_button = tk.Button(root, text="Mostrar Libros", command=show)
-    show_button.grid(row=10, column=1)
-
+    show_button.grid(row=21, column=1)  # Ajusta la fila si es necesario
 
 
 
@@ -119,24 +99,16 @@ def create_main_window():
     def update():
         book_id = simpledialog.askinteger("Input", "Ingrese el ID del libro a actualizar:")
         if book_id:
-            section = section_entry.get()
-            sub_section = sub_section_entry.get()
-            title = title_entry.get()
-            author = author_entry.get()
-            description = description_entry.get()
-            start_year = int(start_year_entry.get())
-            end_year = int(end_year_entry.get())
-            continent = continent_entry.get()
-            country = country_entry.get()
-
+            # Obtener valores dinámicos de entradas
+            values = {column: entry.get() for column, entry in entries.items()}
+        
             # Llamada a la función para actualizar el libro en la base de datos
-            update_book(current_table, book_id, section, sub_section, title, author, description, start_year, end_year, continent, country)
+            update_book(current_table, book_id, **values)
             messagebox.showinfo("Éxito", "Libro actualizado exitosamente!")
 
-
-
+    # Actualizar botón de actualizar libro
     update_button = tk.Button(root, text="Actualizar Libro", command=update)
-    update_button.grid(row=11, column=1)
+    update_button.grid(row=22, column=1)
 
 
 
@@ -151,43 +123,33 @@ def create_main_window():
 
 
     delete_button = tk.Button(root, text="Eliminar Libro", command=delete)
-    delete_button.grid(row=12, column=1)
+    delete_button.grid(row=23, column=1)
 
 
 
-# ----------------------------- Importar Filas desde Excel ------------------------------------------
+# ----------------------------- Importar Libros desde Excel ------------------------------------------
 
     def import_books():
-        # Abrir un cuadro de diálogo para seleccionar el archivo Excel
         file_path = filedialog.askopenfilename(filetypes=[("Excel Files", "*.xlsx;*.xls")])
         if file_path:
-            # Leer el archivo Excel usando pandas
             try:
-                df = pd.read_excel(file_path)  # Cargar el archivo en un DataFrame
-                # Iterar sobre las filas del DataFrame e insertar en la base de datos
-                for index, row in df.iterrows():
-                    # Extraer datos de cada fila
-                    section = row['Etapa']
-                    sub_section = row['Subetapa']
-                    title = row['Título']
-                    author = row['Autor']
-                    description = row['Breve Descripción']
-                    start_year = int(row['Año Inicio'])
-                    end_year = int(row['Año Fin'])
-                    continent = row['Continente']
-                    country = row['País']
-                    
-                    # Llamar a la función para añadir el libro a la base de datos
-                    add_book(section, sub_section, title, author, description, start_year, end_year, continent, country)
-                
-                messagebox.showinfo("Éxito", "Libros importados exitosamente!")  # Mensaje de éxito
+                df = pd.read_excel(file_path)
+                # Filtrar las columnas de `df` para que coincidan con las de `current_table`
+                table_columns = get_table_columns(current_table)  # Obtener columnas de la tabla actual
+                df_filtered = df[table_columns]  # Filtrar DataFrame con solo las columnas de `current_table`
+
+                for _, row in df_filtered.iterrows():
+                    # Crear diccionario `values` con columnas coincidentes de `current_table`
+                    values = {col: row[col] for col in table_columns if col in row.index}
+                    add_book(current_table, **values)  # Añadir el libro a la tabla activa
+
+                messagebox.showinfo("Éxito", "Libros importados exitosamente!")
             except Exception as e:
-                messagebox.showerror("Error", f"Error al importar libros: {e}")  # Mensaje de error
+                messagebox.showerror("Error", f"Error al importar libros: {e}")
 
-
-
+    # Botón para importar libros desde Excel
     import_button = tk.Button(root, text="Importar Libros desde Excel", command=import_books)
-    import_button.grid(row=13, column=1)
+    import_button.grid(row=24, column=1)  # Ajusta la fila si es necesario
 
 
 
@@ -204,7 +166,6 @@ def create_main_window():
         def create_table_action():
             table_name = table_name_entry.get()
             columns = columns_listbox.get(0, tk.END)  # Obtener todas las columnas de la lista
-            columns = [col for col in columns]  # Convertir a lista normal
             if table_name and columns:
                 create_custom_table(table_name, columns)
                 messagebox.showinfo("Éxito", "Tabla creada exitosamente!")
@@ -235,7 +196,7 @@ def create_main_window():
         create_table_button.grid(row=3, column=0, columnspan=3)
 
     create_table_button = tk.Button(root, text="Crear Nueva Tabla", command=create_table_window)
-    create_table_button.grid(row=14, column=1)
+    create_table_button.grid(row=25, column=1)
 
 
 
