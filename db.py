@@ -100,6 +100,7 @@ def delete_book(table_name, book_id):
     conn.close()
     return True
 
+
 # Función para crear una tabla personalizada
 def create_custom_table(table_name, columns):
     conn = connect_db()
@@ -157,3 +158,25 @@ def delete_table(table_name):
     conn.commit()
     conn.close()
     return True
+
+
+
+# Crear una tabla personalizada basada en las columnas del Excel
+def create_table_from_excel(table_name, columns):
+    conn = connect_db()
+    cursor = conn.cursor()
+    # Convertir las columnas a formato SQL
+    columns_sql = ", ".join([f"{col} TEXT" for col in columns])
+    cursor.execute(f'CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY, {columns_sql})')
+    conn.commit()
+    conn.close()
+
+# Insertar fila en la tabla creada
+def add_row_to_table(table_name, row_data):
+    conn = connect_db()
+    cursor = conn.cursor()
+    placeholders = ", ".join(["?"] * len(row_data))
+    query = f'INSERT INTO {table_name} VALUES (NULL, {placeholders})'
+    cursor.execute(query, row_data)
+    conn.commit()
+    conn.close()

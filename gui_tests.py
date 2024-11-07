@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, filedialog, Toplevel
 import pandas as pd  # Importar pandas para manejar archivos Excel
-from db import create_table, add_book, delete_table, show_books, get_table_columns, show_table_data, update_book, delete_book, create_custom_table, get_tables  # Importar la nueva función get_tables
+from db import add_row_to_table, create_table, add_book, create_table_from_excel, delete_table, show_books, get_table_columns, show_table_data, update_book, delete_book, create_custom_table, get_tables  # Importar la nueva función get_tables
 
 # Llamada a la función para crear la tabla en la base de datos (puedes ajustar esta parte según sea necesario)
 create_table()
@@ -129,28 +129,35 @@ def create_main_window():
 
 # ----------------------------- Importar Libros desde Excel ------------------------------------------
 
+# Función para importar libros desde Excel y crear una tabla automáticamente
     def import_books():
+        # Seleccionar el archivo Excel
         file_path = filedialog.askopenfilename(filetypes=[("Excel Files", "*.xlsx;*.xls")])
         if file_path:
-            try:
-                df = pd.read_excel(file_path)
-                # Filtrar las columnas de `df` para que coincidan con las de `current_table`
-                table_columns = get_table_columns(current_table)  # Obtener columnas de la tabla actual
-                df_filtered = df[table_columns]  # Filtrar DataFrame con solo las columnas de `current_table`
+            # Pedir al usuario el nombre de la nueva tabla
+            table_name = simpledialog.askstring("Nombre de la Tabla", "Introduce el nombre para la nueva tabla:")
+        
+            if table_name:
+                try:
+                    # Leer el archivo Excel usando pandas
+                    df = pd.read_excel(file_path)
+                    columns = df.columns.tolist()  # Obtener los nombres de las columnas del Excel
+                
+                    # Crear la nueva tabla en la base de datos con las columnas del archivo
+                    create_table_from_excel(table_name, columns)
+                
+                    # Insertar cada fila del DataFrame en la nueva tabla
+                    for _, row in df.iterrows():
+                        row_data = row.tolist()  # Convertir la fila en lista
+                        add_row_to_table(table_name, row_data)
+                
+                    messagebox.showinfo("Éxito", "Libros importados exitosamente!")  # Mensaje de éxito
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error al importar libros: {e}")  # Mensaje de error
 
-                for _, row in df_filtered.iterrows():
-                    # Crear diccionario `values` con columnas coincidentes de `current_table`
-                    values = {col: row[col] for col in table_columns if col in row.index}
-                    add_book(current_table, **values)  # Añadir el libro a la tabla activa
-
-                messagebox.showinfo("Éxito", "Libros importados exitosamente!")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error al importar libros: {e}")
-
-    # Botón para importar libros desde Excel
+    # Crear el botón para importar libros desde Excel
     import_button = tk.Button(root, text="Importar Libros desde Excel", command=import_books)
     import_button.grid(row=24, column=1)  # Ajusta la fila si es necesario
-
 
 
 # ------------------------------------- Crear Nueva Tabla -------------------------------------------
