@@ -29,7 +29,7 @@ def create_table():
     conn.close()
 
 # Función para añadir un libro a la base de datos
-def add_book(table_name, **kwargs):
+def add_book_to_table(table_name, **kwargs):
     conn = connect_db()
     cursor = conn.cursor()
 
@@ -50,7 +50,7 @@ def add_book(table_name, **kwargs):
     conn.close()
 
 # Función para mostrar todos los libros en la base de datos
-def show_books(table_name):
+def show_books_in_table(table_name):
     conn = connect_db()
     cursor = conn.cursor()
     query = f'SELECT * FROM {table_name}'
@@ -60,7 +60,7 @@ def show_books(table_name):
     return books
 
 # Función para actualizar un libro en la base de datos
-def update_book(table_name, book_id, **kwargs):
+def update_book_in_table(table_name, book_id, **kwargs):
     conn = connect_db()
     cursor = conn.cursor()
 
@@ -81,7 +81,7 @@ def update_book(table_name, book_id, **kwargs):
     conn.close()
 
 # Función para eliminar un libro de la base de datos
-def delete_book(table_name, book_id):
+def delete_book_from_table(table_name, book_id):
     conn = connect_db()
     cursor = conn.cursor()
 
@@ -100,7 +100,6 @@ def delete_book(table_name, book_id):
     conn.close()
     return True
 
-
 # Función para crear una tabla personalizada
 def create_custom_table(table_name, columns):
     conn = connect_db()
@@ -111,14 +110,13 @@ def create_custom_table(table_name, columns):
     conn.close()
 
 # Función para obtener los nombres de las tablas existentes
-def get_tables():
+def list_tables():
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()  # Obtener todas las tablas
     conn.close()
     return [table[0] for table in tables]  # Retornar nombres de tablas
-
 
 # Función que devuelve los nombres de las columnas de la tabla seleccionada 
 def get_table_columns(table_name):
@@ -140,9 +138,7 @@ def show_table_data(table_name):
     conn.close()  # Cerrar la conexión
     return rows  # Devolver los resultados
 
-
-
-# Función para eliminar los datos de una tabla específica
+# Función para eliminar una tabla específica de la base de datos
 def delete_table(table_name):
     conn = connect_db()  # Ajusta el nombre de la base de datos
     cursor = conn.cursor()
@@ -159,10 +155,8 @@ def delete_table(table_name):
     conn.close()
     return True
 
-
-
 # Crear una tabla personalizada basada en las columnas del Excel
-def create_table_from_excel(table_name, columns):
+def create_table_from_excel_columns(table_name, columns):
     conn = connect_db()
     cursor = conn.cursor()
     # Convertir las columnas a formato SQL
@@ -172,7 +166,7 @@ def create_table_from_excel(table_name, columns):
     conn.close()
 
 # Insertar fila en la tabla creada
-def add_row_to_table(table_name, row_data):
+def add_row_to_custom_table(table_name, row_data):
     conn = connect_db()
     cursor = conn.cursor()
     placeholders = ", ".join(["?"] * len(row_data))
